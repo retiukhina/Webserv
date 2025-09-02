@@ -2,7 +2,10 @@
 
 #ARCHITECTURE CONCEPTS
 
-event-driven architecture: non-blocking I/O operations; all network I/O must go through poll();use non-blocking sockets + poll() with timeouts and close connections that are idle for too long; fork is only allowed for CGI scripts execution (external programs like PHP) - this enforces a single-process, non-blocking server architecture for normal requests.
+event-driven architecture: non-blocking I/O operations; all network I/O must go through poll(); use non-blocking sockets + poll() with timeouts and close connections that are idle for too long; fork is only allowed for CGI scripts execution (external programs like PHP) - this enforces a single-process, non-blocking server architecture for normal requests.
+
+strategy pattern: to design a modular request handling system for handling static requests and CGI
+source: https://en.wikipedia.org/wiki/Strategy_pattern
 
 #SECURITY MESSURES
 
