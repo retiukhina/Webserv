@@ -3,6 +3,8 @@
 #include <cstdlib> // For exit() and EXIT_FAILURE
 #include <iostream> // For cout
 #include <unistd.h> // For read
+#include "../include/TCPAcceptor.hpp"
+#include "../include/TCPStream.hpp"
 
 #define DEBUG
 
@@ -14,33 +16,38 @@ bool is_int(const char* s) {
     return true;
 }
 
-int createServerSocket() {
-    // Create a socket (IPv4, TCP)
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == -1) {
-        std::cout << "Failed to create socket. errno: " << errno << std::endl;
-        exit(EXIT_FAILURE);
-    }
-
-    #ifdef DEBUG
-    std::cout << "[INFO] Socket has been created.\n";
-    #endif
-
-    return sockfd;
-}
-
 int main(int argc, char **argv) {
-    if (argc != 2 || !is_int(argv[1])) {
+    if ((argc < 2 && argc > 3) || !is_int(argv[1])) {
         std::cerr << "[ERROR] Port is not provided via command line parameters!\n";
         return -1;
     }
     try {
-        int server_socket_fd = createServerSocket();
-        #ifdef DEBUG
-        std::cout << "Socket FD = " << server_socket_fd << std::endl;
-        #endif
-        close(server_socket_fd);
+        int port = atoi(argv[1]);
+        std::string ip = (argc == 3) ? argv[2] : "";
+
+        TCPAcceptor acceptor(port, ip);
+        if (acceptor.start() != 0) {
+            throw std::runtime_error("Could not start the server");
+        }
+
+        while (true) {
+            TCPStream* stream = acceptor.accept();
+            if (!stream) {
+                throw std::runtime_error("accept() failed");
+            }
+
+            char line[256];
+            ssize_t len;
+            while ((len = stream->receive(line, sizeof(line) - 1)) > 0) {
+                line[len] = '\0';
+                printf("received - %s\n", line);
+                stream->send(line, len); // echo back
+            }
+            delete stream;
+        }
     } catch (const std::exception& e) {
         std::cerr << "Server error: " << e.what() << std::endl;
+    } catch(...) {
+        std::cerr << "Server error: Unknown error occurred\n" << std::endl;
     }
 }
